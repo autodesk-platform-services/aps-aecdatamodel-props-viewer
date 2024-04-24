@@ -15,39 +15,26 @@
 // UNINTERRUPTED OR ERROR FREE.
 //
 
-import { AECDataModelPropsPanelPanel } from './AECDataModelPropsPanelPanel.js';
+import { AECDataModelPropsPanelPanel } from './AECDataModelPropsPanel.js';
 
 class AECDataModelPropsExtension extends Autodesk.Viewing.Extension{
   constructor(viewer, options) {
     super(viewer, options);
     this._button = null;
     this._panel = null;
+    viewer.addEventListener(Autodesk.Viewing.SELECTION_CHANGED_EVENT, this.onSelectionChanged.bind(this));
   }
 
   onToolbarCreated(toolbar) {
     this._panel = new AECDataModelPropsPanelPanel(this, 'aecdm-props-panel', 'AEC DM Properties');
-    this._button = this.createToolbarButton('aecdm-props--button', 'https://img.icons8.com/ios/30/camera--v3.png', 'AEC DM Properties');
+    this._button = this.createToolbarButton('aecdm-props--button', 'https://img.icons8.com/ios/30/share-2--v1.png', 'AEC DM Properties');
     this._button.onClick = async () => {
       this._panel.setVisible(!this._panel.isVisible());
       this._button.setState(this._panel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
-      if (this._panel.isVisible()) {
-        this.update();
-      }
     };
   }
 
-  onModelLoaded(model) {
-    super.onModelLoaded(model);
-    this.update();
-  }
-
   onSelectionChanged(model, dbids) {
-    super.onSelectionChanged(model, dbids);
-    this.update();
-  }
-
-  onIsolationChanged(model, dbids) {
-    super.onIsolationChanged(model, dbids);
     this.update();
   }
 
@@ -74,13 +61,11 @@ class AECDataModelPropsExtension extends Autodesk.Viewing.Extension{
     if (this._panel) {
       const selectedIds = this.viewer.getSelection();
       const isolatedIds = this.viewer.getIsolatedNodes();
-      if (selectedIds.length > 0) { // If any nodes are selected, compute the aggregates for them
-        this._panel.update(this.viewer.model, selectedIds, SUMMARY_PROPS);
-      } else if (isolatedIds.length > 0) { // Or, if any nodes are isolated, compute the aggregates for those
-        this._panel.update(this.viewer.model, isolatedIds, SUMMARY_PROPS);
-      } else { // Otherwise compute the aggregates for all nodes
-        const dbids = await this.findLeafNodes(this.viewer.model);
-        this._panel.update(this.viewer.model, dbids, SUMMARY_PROPS);
+      if (selectedIds.length == 1) { // Only supports one single element selected
+        this.viewer.model.getBulkProperties([NOP_VIEWER.getSelection()[0]], {propFilter:['name']}, (obj) => {
+          let elementId = obj[0].name.split('[')[1].replace(']','');
+          this._panel.update(CURRENT_HUB_ID, CURRENT_FILE_URN, CURRENT_FILE_VERSION, elementId);
+        }, console.log);
       }
     }
   }

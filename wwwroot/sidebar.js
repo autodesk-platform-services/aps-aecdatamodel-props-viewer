@@ -61,6 +61,9 @@ export function initTree(selector, onSelectionChanged) {
       const tokens = node.id.split('|');
       if (tokens[0] === 'version') {
           onSelectionChanged(tokens[1]);
+          CURRENT_FILE_URN = node.getParent().id.split('|')[3];
+          CURRENT_HUB_ID = node.getParent().getParent().id.split('|')[1];
+          CURRENT_FILE_VERSION = parseInt(node.id.split('=')[1]);
       }
   });
   return new InspireTreeDOM(tree, { target: selector });

@@ -5,53 +5,51 @@ export class AECDataModelPropsPanelPanel extends Autodesk.Viewing.UI.PropertyPan
       this.graphqlUrl = 'https://developer.api.autodesk.com/aecdatamodel/graphql';
   }
 
-  async update(designId, versionNumber, externalId) {
+  async update(hubId, fileUrn, versionNumber, elementId) {
       this.removeAllProperties();
-      let respJSON = await this.getVersionElementsProperty(designOne, versionOne, filter)
-      let cursor = respJSON.data.elementsByDesignAtVersion.pagination.cursor;
-      for (const result of respJSON.data.elementsByDesignAtVersion.results) {
-        
-        result.properties.results[0]
-        if (!chartDataOne[result.properties.results[0].value])
-          chartDataOne[result.properties.results[0].value] = 0
-        chartDataOne[result.properties.results[0].value]++;
-        elementsFound++;
+      let respJSON = await this.getVersionElementProperties(hubId, fileUrn, elementId);
+      let properVersion = respJSON.data.aecDesignsByHub.results.find(r => r.version.versionNumber == versionNumber);
+      let cursor = properVersion.elements.results[0].properties.pagination.cursor;
+      for (const property of properVersion.elements.results[0].properties.results) {
+        this.addProperty(property.name, property.value, 'AEC DM Props');
       }
       while (!!cursor) {
-        let newRespJSON = await getVersionElementsPropertyPaginated(designOne, versionOne, filter, cursor)
-        cursor = newRespJSON.data.elementsByDesignAtVersion.pagination.cursor;
-        for (const result of newRespJSON.data.elementsByDesignAtVersion.results) {
-          if (!chartDataOne[result.properties.results[0].value])
-            chartDataOne[result.properties.results[0].value] = 0
-          chartDataOne[result.properties.results[0].value]++;
-          elementsFound++;
+        let newRespJSON = await getVersionElementPropertiesPaginated(hubId, fileUrn, elementId, cursor);
+        properVersion = newRespJSON.data.aecDesignsByHub.results.find(r => r.version.versionNumber == versionNumber);
+        cursor = properVersion.elements.results[0].properties.pagination.cursor;
+        for (const property of properVersion.elements.results[0].properties.results) {
+          this.addProperty(property.name, property.value, 'AEC DM Props');
         }
-        loadingDiv.lastChild.lastChild.lastChild.childNodes[5].innerHTML = `Loading Data: ${elementsFound} elements found`;
-      }
-      for (const propName of propNames) {
-        // this.addProperty('Max', this.toDisplayUnits(max, units, precision), category);
       }
   }
 
-  async getVersionElementsProperty(designId, versionNumber, filter) {
+  async getVersionElementProperties(hubId, fileUrn, elementId) {
     let token = await (await fetch('/api/auth/token')).json();
     let jsonBody = {
-      query: `query getVersionElementsProperty {
-        elementsByDesignAtVersion(designId: "${designId}", versionNumber:${parseFloat(versionNumber)}, filter:{query:"${filter}"}) {
-          pagination{cursor}
+      query: `query GetPropertiesFromURN{
+        aecDesignsByHub(hubId:"${hubId}", filter:{fileUrn:"${fileUrn}"}){
           results{
-            name
-            properties{
+            version{
+              versionNumber
+            }
+            elements(filter:{query:"'property.name.Element Context'==Instance and 'property.name.Revit Element ID'==${elementId}"}){
               results{
-                value
-                name
+                properties{
+                  pagination{
+                    cursor
+                  }
+                  results{
+                    name
+                    value
+                  }
+                }
               }
             }
           }
         }
       }`,
       variables: undefined,
-      operationName: "getVersionElementsProperty"
+      operationName: "GetPropertiesFromURN"
     }
     const options = {
       method: 'POST',
@@ -62,7 +60,7 @@ export class AECDataModelPropsPanelPanel extends Autodesk.Viewing.UI.PropertyPan
       body: JSON.stringify(jsonBody)
     };
     let timestarted = Date.now();
-    let resp = await fetch(graphql_url, options);
+    let resp = await fetch(this.graphqlUrl, options);
     let timeElapsed = Date.now() - timestarted;
     console.log(`Query response received after ${timeElapsed} ms`);
     console.log(jsonBody.query);
@@ -70,25 +68,33 @@ export class AECDataModelPropsPanelPanel extends Autodesk.Viewing.UI.PropertyPan
     return respJSON;
   }
   
-  async getVersionElementsPropertyPaginated(designId, versionNumber, filter, cursor) {
+  async getVersionElementPropertiesPaginated(hubId, fileUrn, elementId, cursor) {
     let token = await (await fetch('/api/auth/token')).json();
     let jsonBody = {
-      query: `query getDesignElementsProperty {
-        elementsByDesignAtVersion(designId: "${designId}", versionNumber:${parseFloat(versionNumber)} filter:{query:"${filter}"}, pagination:{cursor:"${cursor}"}) {
-          pagination{cursor}
+      query: `query GetPropertiesFromURN{
+        aecDesignsByHub(hubId:"${hubId}", filter:{fileUrn:"${fileUrn}"}){
           results{
-            name
-            properties{
+            version{
+              versionNumber
+            }
+            elements(filter:{query:"'property.name.Element Context'==Instance and 'property.name.Revit Element ID'==${elementId}"}){
               results{
-                value
-                name
+                properties(pagination:{cursor:"${cursor}"}){
+                  pagination{
+                    cursor
+                  }
+                  results{
+                    name
+                    value
+                  }
+                }
               }
             }
           }
         }
       }`,
       variables: undefined,
-      operationName: "getDesignElementsProperty"
+      operationName: "GetPropertiesFromURN"
     }
     const options = {
       method: 'POST',
@@ -99,7 +105,7 @@ export class AECDataModelPropsPanelPanel extends Autodesk.Viewing.UI.PropertyPan
       body: JSON.stringify(jsonBody)
     };
     let timestarted = Date.now();
-    let resp = await fetch(graphql_url, options);
+    let resp = await fetch(this.graphqlUrl, options);
     let timeElapsed = Date.now() - timestarted;
     console.log(`Query response received after ${timeElapsed} ms`);
     console.log(jsonBody.query);
