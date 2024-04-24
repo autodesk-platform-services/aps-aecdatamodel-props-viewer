@@ -11,15 +11,27 @@ export class AECDataModelPropsPanelPanel extends Autodesk.Viewing.UI.PropertyPan
       let properVersion = respJSON.data.aecDesignsByHub.results.find(r => r.version.versionNumber == versionNumber);
       let cursor = properVersion.elements.results[0].properties.pagination.cursor;
       for (const property of properVersion.elements.results[0].properties.results) {
-        this.addProperty(property.name, property.value, 'AEC DM Props');
+        let units = property.propertyDefinition.units;
+        let value = units ? property.displayValue + ' ' + units : property.displayValue;
+        this.addProperty(property.name, value, 'AEC DM Properties');
+      }
+      for(const reference of properVersion.elements.results[0].references.results){
+        let units = reference.propertyDefinition.units;
+        let value = units ? reference.displayValue + ' ' + units : reference.displayValue;
+        this.addProperty(reference.name, value, 'AEC DM Reference Properties');
       }
       while (!!cursor) {
         let newRespJSON = await getVersionElementPropertiesPaginated(hubId, fileUrn, elementId, cursor);
         properVersion = newRespJSON.data.aecDesignsByHub.results.find(r => r.version.versionNumber == versionNumber);
         cursor = properVersion.elements.results[0].properties.pagination.cursor;
         for (const property of properVersion.elements.results[0].properties.results) {
-          this.addProperty(property.name, property.value, 'AEC DM Props');
+          let units = property.propertyDefinition.units;
+          let value = units ? property.displayValue + ' ' + units : property.displayValue;
+          this.addProperty(property.name, value, 'AEC DM Properties');
         }
+        // for(const reference of properVersion.elements.results[0].references.results){
+        //   this.addProperty(reference.name, reference.displayValue, 'AEC DM Reference Properties');
+        // }
       }
   }
 
@@ -40,7 +52,19 @@ export class AECDataModelPropsPanelPanel extends Autodesk.Viewing.UI.PropertyPan
                   }
                   results{
                     name
-                    value
+                    displayValue
+                    propertyDefinition{
+                      units
+                    }
+                  }
+                }
+                references{
+                  results{
+                    name
+                    displayValue
+                    propertyDefinition{
+                      units
+                    }
                   }
                 }
               }
@@ -85,7 +109,19 @@ export class AECDataModelPropsPanelPanel extends Autodesk.Viewing.UI.PropertyPan
                   }
                   results{
                     name
-                    value
+                    displayValue
+                    propertyDefinition{
+                      units
+                    }
+                  }
+                }
+                references{
+                  results{
+                    name
+                    displayValue
+                    propertyDefinition{
+                      units
+                    }
                   }
                 }
               }
