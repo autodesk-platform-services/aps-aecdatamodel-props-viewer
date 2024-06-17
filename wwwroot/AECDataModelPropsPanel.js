@@ -16,9 +16,11 @@ export class AECDataModelPropsPanelPanel extends Autodesk.Viewing.UI.PropertyPan
         this.addProperty(property.name, value, 'AEC DM Properties');
       }
       for(const reference of properVersion.elements.results[0].references.results){
-        let units = reference.propertyDefinition.units;
-        let value = units ? reference.displayValue + ' ' + units : reference.displayValue;
-        this.addProperty(reference.name, value, 'AEC DM Reference Properties');
+        for(const referenceProperty of reference.value.properties.results){
+          let units = referenceProperty.propertyDefinition.units;
+          let referenceValue = units ? referenceProperty.displayValue + ' ' + units : referenceProperty.displayValue;
+          this.addProperty(referenceProperty.name, referenceValue, `AEC DM Reference Properties - ${reference.name}`);
+        } 
       }
       while (!!cursor) {
         let newRespJSON = await getVersionElementPropertiesPaginated(hubId, fileUrn, elementId, cursor);
@@ -64,6 +66,18 @@ export class AECDataModelPropsPanelPanel extends Autodesk.Viewing.UI.PropertyPan
                     displayValue
                     propertyDefinition{
                       units
+                    }
+                    value{
+                      name
+                      properties{
+                        results{
+                          name
+                          displayValue
+                          propertyDefinition{
+                            units
+                          }
+                        }
+                      }
                     }
                   }
                 }
@@ -121,6 +135,18 @@ export class AECDataModelPropsPanelPanel extends Autodesk.Viewing.UI.PropertyPan
                     displayValue
                     propertyDefinition{
                       units
+                    }
+                    value{
+                      name
+                      properties{
+                        results{
+                          name
+                          displayValue
+                          propertyDefinition{
+                            units
+                          }
+                        }
+                      }
                     }
                   }
                 }
