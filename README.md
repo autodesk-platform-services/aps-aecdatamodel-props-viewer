@@ -2,6 +2,8 @@
 
 The sample is using the [AEC Data Model API](https://aps.autodesk.com/en/docs/aecdatamodel/v1/developers_guide/overview/) to retrieve individual elements properties and then adding those in a custom property panel in the Viewer. With that, we can quickly check the properties available for a specific element and even compare with the properties available with the Viewer context (generated from Model Derivative API).
 
+## Demo: http://aps-hubs-browser-aecdatamodel.autodesk.io
+
 ## Setting up the app
 
 - clone this repository or download
