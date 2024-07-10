@@ -56,13 +56,16 @@ export function initTree(selector, onSelectionChanged) {
           }
       }
   });
-  tree.on('node.click', function (event, node) {
+  tree.on('node.click', async function (event, node) {
       event.preventTreeDefault();
       const tokens = node.id.split('|');
       if (tokens[0] === 'version') {
           onSelectionChanged(tokens[1]);
           CURRENT_FILE_URN = node.getParent().id.split('|')[3];
-          CURRENT_HUB_ID = node.getParent().getParent().id.split('|')[1];
+          let ids = node.getParents().map(t => t.id);
+          let texts = node.getParents().map(t => t.text);
+          CURRENT_HUB_NAME = texts[ids.findIndex(i => i.includes('hub'))];
+          CURRENT_PROJECT_NAME = texts[ids.findIndex(i => i.includes('project'))];
           CURRENT_FILE_VERSION = parseInt(node.id.split('=')[1]);
       }
   });

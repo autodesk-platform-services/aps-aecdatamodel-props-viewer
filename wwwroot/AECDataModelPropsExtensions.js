@@ -64,7 +64,7 @@ class AECDataModelPropsExtension extends Autodesk.Viewing.Extension{
       if (selectedIds.length == 1) { // Only supports one single element selected
         this.viewer.model.getBulkProperties([NOP_VIEWER.getSelection()[0]], {propFilter:['name']}, (obj) => {
           let elementId = obj[0].name.split('[')[1].replace(']','');
-          this._panel.update(CURRENT_HUB_ID, CURRENT_FILE_URN, CURRENT_FILE_VERSION, elementId);
+          this._panel.update(CURRENT_HUB_NAME, CURRENT_PROJECT_NAME, CURRENT_FILE_URN, elementId);
         }, console.log);
       }
     }

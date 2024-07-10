@@ -2,79 +2,91 @@ export class AECDataModelPropsPanelPanel extends Autodesk.Viewing.UI.PropertyPan
   constructor(extension, id, title) {
       super(extension.viewer.container, id, title);
       this.extension = extension;
-      this.graphqlUrl = 'https://developer.api.autodesk.com/aecdatamodel/graphql';
+      this.graphqlUrl = 'https://developer.api.autodesk.com/aec/graphql';
   }
 
-  async update(hubId, fileUrn, versionNumber, elementId) {
+  async update(hubName, projectName, fileUrn, elementId) {
       this.removeAllProperties();
-      let respJSON = await this.getVersionElementProperties(hubId, fileUrn, elementId);
-      let properVersion = respJSON.data.aecDesignsByHub.results.find(r => r.version.versionNumber == versionNumber);
-      let cursor = properVersion.elements.results[0].properties.pagination.cursor;
-      for (const property of properVersion.elements.results[0].properties.results) {
-        let units = property.propertyDefinition.units;
+      let respJSON = await this.getVersionElementProperties(hubName, projectName, fileUrn, elementId);
+      let element = respJSON.data.hubs.results[0].projects.results[0].elementGroups.results[0].elements.results[0];
+      let cursor = element.properties.pagination.cursor;
+      for (const property of element.properties.results) {
+        let units = property.definition.units?.name;
         let value = units ? property.displayValue + ' ' + units : property.displayValue;
         this.addProperty(property.name, value, 'AEC DM Properties');
       }
-      for(const reference of properVersion.elements.results[0].references.results){
+      for(const reference of element.references.results){
         for(const referenceProperty of reference.value.properties.results){
-          let units = referenceProperty.propertyDefinition.units;
+          let units = referenceProperty.definition.units?.name;
           let referenceValue = units ? referenceProperty.displayValue + ' ' + units : referenceProperty.displayValue;
           this.addProperty(referenceProperty.name, referenceValue, `AEC DM Reference Properties - ${reference.name}`);
         } 
       }
       while (!!cursor) {
-        let newRespJSON = await getVersionElementPropertiesPaginated(hubId, fileUrn, elementId, cursor);
-        properVersion = newRespJSON.data.aecDesignsByHub.results.find(r => r.version.versionNumber == versionNumber);
-        cursor = properVersion.elements.results[0].properties.pagination.cursor;
-        for (const property of properVersion.elements.results[0].properties.results) {
-          let units = property.propertyDefinition.units;
+        let newRespJSON = await getVersionElementPropertiesPaginated(hubName, projectName, fileUrn, elementId, cursor);
+        let element = respJSON.data.hubs.results[0].projects.resutls[0].elementGroups.results[0].elements.results[0];
+        cursor = element.properties.pagination.cursor;
+        for (const property of element.properties.results) {
+          let units = property.definition.units?.name;
           let value = units ? property.displayValue + ' ' + units : property.displayValue;
           this.addProperty(property.name, value, 'AEC DM Properties');
         }
-        // for(const reference of properVersion.elements.results[0].references.results){
-        //   this.addProperty(reference.name, reference.displayValue, 'AEC DM Reference Properties');
-        // }
       }
   }
 
-  async getVersionElementProperties(hubId, fileUrn, elementId) {
+  async getVersionElementProperties(hubName, projectName, fileUrn, elementId) {
     let token = await (await fetch('/api/auth/token')).json();
     let jsonBody = {
-      query: `query GetPropertiesFromURN{
-        aecDesignsByHub(hubId:"${hubId}", filter:{fileUrn:"${fileUrn}"}){
+      query:`query GetPropertiesFromURN{
+        hubs(filter:{name:"${hubName}"}
+        pagination:{limit:1}){
           results{
-            version{
-              versionNumber
-            }
-            elements(filter:{query:"'property.name.Element Context'==Instance and 'property.name.Revit Element ID'==${elementId}"}){
+            projects(filter:{name:"${projectName}"}
+            pagination:{limit:1}){
               results{
-                properties{
-                  pagination{
-                    cursor
-                  }
+                elementGroups(filter:{fileUrn:"${fileUrn}"}
+                pagination:{limit:1}){
                   results{
-                    name
-                    displayValue
-                    propertyDefinition{
-                      units
-                    }
-                  }
-                }
-                references{
-                  results{
-                    name
-                    displayValue
-                    propertyDefinition{
-                      units
-                    }
-                    value{
-                      name
-                      properties{
-                        results{
-                          name
-                          displayValue
-                          propertyDefinition{
-                            units
+                    elements(filter:{query: "'property.name.Element Context'==Instance and 'property.name.Revit Element ID'==${elementId}"}
+                    pagination:{limit:1}){
+                      results{
+                        properties{
+                          pagination {
+                            cursor
+                          }
+                          results {
+                            name
+                            displayValue
+                            definition{
+                              units{
+                                name
+                              }
+                            }
+                          }
+                        }
+                        references{
+                          results{
+                            name
+                            displayValue
+                            definition{
+                              units{
+                                name
+                              }
+                            }
+                            value{
+                              name
+                              properties{
+                                results{
+                                  name
+                                  displayValue
+                                  definition{
+                                    units{
+                                      name
+                                    }
+                                  }
+                                }
+                              }
+                            }
                           }
                         }
                       }
@@ -106,44 +118,59 @@ export class AECDataModelPropsPanelPanel extends Autodesk.Viewing.UI.PropertyPan
     return respJSON;
   }
   
-  async getVersionElementPropertiesPaginated(hubId, fileUrn, elementId, cursor) {
+  async getVersionElementPropertiesPaginated(hubName, projectName, fileUrn, elementId, cursor) {
     let token = await (await fetch('/api/auth/token')).json();
     let jsonBody = {
-      query: `query GetPropertiesFromURN{
-        aecDesignsByHub(hubId:"${hubId}", filter:{fileUrn:"${fileUrn}"}){
+      query:`query GetPropertiesFromURN{
+        hubs(filter:{name:"${hubName}"}
+        pagination:{limit:1}){
           results{
-            version{
-              versionNumber
-            }
-            elements(filter:{query:"'property.name.Element Context'==Instance and 'property.name.Revit Element ID'==${elementId}"}){
+            projects(filter:{name:"${projectName}"}
+            pagination:{limit:1}){
               results{
-                properties(pagination:{cursor:"${cursor}"}){
-                  pagination{
-                    cursor
-                  }
+                elementGroups(filter:{fileUrn:"${fileUrn}"}
+                pagination:{limit:1}){
                   results{
-                    name
-                    displayValue
-                    propertyDefinition{
-                      units
-                    }
-                  }
-                }
-                references{
-                  results{
-                    name
-                    displayValue
-                    propertyDefinition{
-                      units
-                    }
-                    value{
-                      name
-                      properties{
-                        results{
-                          name
-                          displayValue
-                          propertyDefinition{
-                            units
+                    elements(filter:{query: "'property.name.Element Context'==Instance and 'property.name.Revit Element ID'==${elementId}"}
+                    pagination:{limit:1}){
+                      results{
+                        properties(pagination:{cursor:"${cursor}"}){
+                          pagination {
+                            cursor
+                          }
+                          results {
+                            name
+                            displayValue
+                            definition{
+                              units{
+                                name
+                              }
+                            }
+                          }
+                        }
+                        references{
+                          results{
+                            name
+                            displayValue
+                            definition{
+                              units{
+                                name
+                              }
+                            }
+                            value{
+                              name
+                              properties{
+                                results{
+                                  name
+                                  displayValue
+                                  definition{
+                                    units{
+                                      name
+                                    }
+                                  }
+                                }
+                              }
+                            }
                           }
                         }
                       }
