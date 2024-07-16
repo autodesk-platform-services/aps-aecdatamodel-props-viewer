@@ -109,7 +109,7 @@ query GetPropertiesFromURN{
 
 ## Troubleshooting
 
-1. **Can't see properties for selected element**: Check the console for details. It also works for designs that generated `ElementGroups`.
+1. **Can't see properties for selected element**: Check the console for details. It only works for designs that generated `ElementGroups`.
 
 ## License
 
