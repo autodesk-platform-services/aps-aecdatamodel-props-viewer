@@ -20,7 +20,7 @@ The sample is using the [AEC Data Model API](https://aps.autodesk.com/en/docs/ae
 
 **Make sure your APS app also uses the same callback url!**
 
-- Provision your client id in your ACC hub.
+- Provision your client id in your hub of Forma for Construction.
 - Follow the [Onboarding to AEC Data Model](https://aps.autodesk.com/en/docs/aecdatamodel/v1/developers_guide/onboarding/) instructions to activate your hub for AEC Data Model.
 
 **Once active, your hub will start generating ElementGroups from Revit 2024+ designs uploaded**
